@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#7ed4f1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Craypots" />
+    <title>Craypots Projector Display</title>
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/app-icon.png" />
+    <link rel="apple-touch-icon" href="/app-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="display-mode">
+    <div class="display-shell">
+      <header class="display-header">
+        <div class="display-banner-shell">
+          <img src="/Craypots-Banner.png" alt="Craypots banner" class="display-banner" />
+          <div class="display-meta">
+            <span class="pill">Round <span id="displayRound">1</span></span>
+            <span class="weather-badge" id="displayWeather">Good</span>
+            <span class="pill">Roll <span id="displayRoll">-</span></span>
+            <span class="pill">AutoLock <span id="displayAutoLock">-</span></span>
+          </div>
+        </div>
+      </header>
+
+      <main class="display-main">
+        <aside class="panel display-sidebar">
+          <section class="display-teacher-tools">
+            <h2>Teacher</h2>
+            <input id="displayTeacherCode" maxlength="6" inputmode="numeric" placeholder="Teacher code" />
+            <button id="displayClaimTeacherButton" class="secondary-button">Claim controls</button>
+            <p id="displayTeacherStatus" class="hint"></p>
+          </section>
+          <section class="display-dice-panel">
+            <h2>Universal Dice</h2>
+            <div id="displayDice" class="dice-face display-dice-face" aria-live="polite">?</div>
+          </section>
+          <section class="display-summary">
+            <h2>Class Stats</h2>
+            <div class="summary-stat">
+              <h3>Most Money Made</h3>
+              <p id="mostMoneyStat">-</p>
+            </div>
+            <div class="summary-stat">
+              <h3>Most Pots Lost</h3>
+              <p id="mostPotsLostStat">-</p>
+            </div>
+          </section>
+        </aside>
+
+        <section class="display-table panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Name</th>
+                <th>Money</th>
+                <th>Boats</th>
+                <th>Pots</th>
+                <th>Online</th>
+                <th>Lock</th>
+                <th id="displayBootHeader" class="hidden">Boot</th>
+              </tr>
+            </thead>
+            <tbody id="displayLeaderboardBody"></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/display.js"></script>
+  </body>
+</html>

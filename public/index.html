@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#7ed4f1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Craypots" />
+    <title>Craypots Classroom</title>
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/app-icon.png" />
+    <link rel="apple-touch-icon" href="/app-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <img src="/Craypots-Banner.png" alt="Craypots banner" class="hero-banner" />
+      </header>
+
+      <main class="layout">
+        <section class="panel intro-panel">
+          <h2>How It Works</h2>
+          <div class="rules-grid">
+            <div>
+              <h3>Starting gear</h3>
+              <p>Each player starts with 1 boat, 5 pots, and $0.</p>
+            </div>
+            <div>
+              <h3>Boat capacity</h3>
+              <p>Each boat can hold up to 10 pots in a round.</p>
+            </div>
+            <div>
+              <h3>Good weather</h3>
+              <p>Inside reef earns $2 per pot. Outside reef earns $8 per pot.</p>
+            </div>
+            <div>
+              <h3>Bad weather</h3>
+              <p>Inside reef earns $4 per pot. Outside reef pots are lost.</p>
+            </div>
+            <div>
+              <h3>Buying</h3>
+              <p>Extra boats cost $100. Extra pots cost $5.</p>
+            </div>
+            <div>
+              <h3>Selling</h3>
+              <p>Boats sell back for $50. Pots sell back for $5.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel join-panel">
+          <div class="panel-heading">
+            <h2>Join The Session</h2>
+            <div class="teacher-claim-wrap">
+              <input id="teacherAccessCode" maxlength="6" inputmode="numeric" placeholder="Teacher code" />
+              <button id="claimTeacherButton" class="secondary-button">Claim teacher controls</button>
+            </div>
+          </div>
+          <div class="join-form">
+            <div class="join-grid">
+              <div>
+                <label for="sessionCode">Session code</label>
+                <input id="sessionCode" maxlength="6" inputmode="numeric" placeholder="6-digit code" />
+              </div>
+              <div>
+                <label for="playerName">Student name</label>
+                <input id="playerName" maxlength="24" placeholder="Enter your name" />
+              </div>
+              <div>
+                <label for="playerPin">4-digit PIN</label>
+                <input id="playerPin" maxlength="4" inputmode="numeric" placeholder="1234" />
+              </div>
+              <div>
+                <label for="playerEmoji">Emoji</label>
+                <select id="playerEmoji">
+                  <option value="&#x1F980;">&#x1F980; Crab</option>
+                  <option value="&#x1F420;">&#x1F420; Fish</option>
+                  <option value="&#x1F419;">&#x1F419; Octopus</option>
+                  <option value="&#x1F988;">&#x1F988; Shark</option>
+                  <option value="&#x1F42C;">&#x1F42C; Dolphin</option>
+                  <option value="&#x1F991;">&#x1F991; Squid</option>
+                  <option value="&#x1F9AD;">&#x1F9AD; Seal</option>
+                  <option value="&#x1F433;">&#x1F433; Whale</option>
+                </select>
+              </div>
+            </div>
+            <div class="join-row">
+              <button id="joinButton" class="primary-button">Join or reconnect</button>
+              <button id="clearSavedButton" class="secondary-button">Forget saved login</button>
+            </div>
+          </div>
+          <p id="statusMessage" class="status-message"></p>
+        </section>
+
+        <section class="panel teacher-panel hidden" id="teacherPanel">
+          <div class="panel-heading">
+            <h2>Teacher Controls</h2>
+            <span class="pill">Round <span id="roundNumber">1</span></span>
+          </div>
+          <div class="teacher-grid">
+            <div class="teacher-card">
+              <h3>Session Setup</h3>
+              <p class="hint">Code: <strong id="sessionCodeValue">Not created</strong></p>
+              <button id="createGameButton" class="primary-button">Create game session</button>
+              <button id="startGameButton" class="secondary-button">Start game</button>
+            </div>
+            <div class="teacher-card">
+              <h3>Universal game dice</h3>
+              <p class="hint">1-3 good, 4 same as yesterday, 5-6 bad</p>
+              <p class="hint countdown-hint">Auto-lock in: <strong id="autoLockCountdown">-</strong></p>
+              <div class="dice-stage">
+                <div id="teacherDice" class="dice-face" aria-live="polite">?</div>
+              </div>
+              <p class="hint">Last roll: <strong id="lastRollValue">-</strong></p>
+              <button id="rollWeatherButton" class="primary-button">Roll dice</button>
+            </div>
+            <div class="teacher-card">
+              <h3>Round flow</h3>
+              <p id="teacherWeather" class="weather-badge">Good</p>
+              <button id="lockChoicesButton" class="secondary-button">Lock student choices</button>
+              <button id="resolveRoundButton" class="primary-button">Resolve round</button>
+              <button id="startRoundButton" class="primary-button">Start next round</button>
+            </div>
+            <div class="teacher-card">
+              <h3>Session</h3>
+              <p class="hint"><a href="/display.html" target="_blank" rel="noreferrer">Open projector display</a></p>
+              <p class="hint">Reset all students back to the starting setup.</p>
+              <button id="resetButton" class="danger-button">Reset game</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel player-panel hidden" id="playerPanel">
+          <div class="panel-heading">
+            <h2>Your Turn Board</h2>
+            <span class="pill" id="playerIdentity"></span>
+          </div>
+          <div class="turn-banner">
+            <p class="hint" id="phaseBadge"></p>
+            <p class="hint" id="nextActionText"></p>
+            <p class="countdown-alert" id="playerCountdownAlert"></p>
+          </div>
+          <div class="player-stats" id="playerStats"></div>
+          <div class="player-actions">
+            <div class="action-card step-card">
+              <h3>Step 1: Optional shop</h3>
+              <p class="hint">Only if you want to change your boats or pots this round.</p>
+              <label for="buyBoatsInput">Boats</label>
+              <input id="buyBoatsInput" type="number" min="0" value="0" />
+              <label for="buyPotsInput">Pots</label>
+              <input id="buyPotsInput" type="number" min="0" value="0" />
+              <label for="buyTotalInput">Total cost you calculated ($)</label>
+              <input id="buyTotalInput" type="number" min="0" value="0" />
+              <button id="buyButton" class="secondary-button">Buy gear</button>
+              <label for="sellBoatsInput">Boats</label>
+              <input id="sellBoatsInput" type="number" min="0" value="0" />
+              <label for="sellPotsInput">Pots</label>
+              <input id="sellPotsInput" type="number" min="0" value="0" />
+              <label for="sellTotalInput">Total return you calculated ($)</label>
+              <input id="sellTotalInput" type="number" min="0" value="0" />
+              <button id="sellButton" class="secondary-button">Sell gear</button>
+            </div>
+            <div class="action-card step-card">
+              <h3>Step 2: Place your pots</h3>
+              <p class="hint">Choose how many go inside and outside, then save.</p>
+              <label for="insideInput">Inside reef</label>
+              <input id="insideInput" type="number" min="0" value="0" />
+              <label for="outsideInput">Outside reef</label>
+              <input id="outsideInput" type="number" min="0" value="0" />
+              <button id="placeButton" class="primary-button">Save placement</button>
+            </div>
+            <div class="action-card step-card final-step">
+              <h3>Step 3: Lock in your turn</h3>
+              <p class="hint">Press this when your choices are done.</p>
+              <button id="lockInButton" class="primary-button">Lock in my choices</button>
+              <label for="claimAmountInput">After resolve: amount you earned ($)</label>
+              <input id="claimAmountInput" type="number" min="0" value="0" />
+              <button id="claimSettlementButton" class="primary-button">Claim round earnings</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel leaderboard-panel">
+          <div class="panel-heading">
+            <h2>Live Leaderboard</h2>
+            <p class="current-weather">
+              Weather:
+              <span id="weatherLabel" class="weather-badge">Good</span>
+            </p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Name</th>
+                  <th>Money</th>
+                  <th>Boats</th>
+                  <th>Pots</th>
+                  <th>Online</th>
+                  <th>Round lock</th>
+                  <th>Last placement</th>
+                  <th>Last result</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardBody">
+                <tr>
+                  <td colspan="9" class="empty-state">No students have joined yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel history-panel">
+          <div class="panel-heading">
+            <h2>Session Feed</h2>
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

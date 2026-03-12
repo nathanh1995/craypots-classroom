@@ -1,0 +1,5 @@
+.vercel
+node_modules
+server.log
+server.err
+npm-debug.log*
