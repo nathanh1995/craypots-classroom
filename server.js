@@ -26,7 +26,7 @@ const weatherLabels = {
 
 const state = {
   sessionCode: null,
-  teacherAccessCode: createSessionCode(),
+  teacherAccessCode: null,
   gameStarted: false,
   round: 1,
   phase: "planning",
@@ -642,7 +642,6 @@ function resetGame() {
 function createGameSession() {
   clearAutoLockTimer();
   state.sessionCode = createSessionCode();
-  state.teacherAccessCode = createSessionCode();
   state.gameStarted = false;
   state.round = 1;
   state.phase = "planning";
@@ -655,7 +654,6 @@ function createGameSession() {
   state.socketToPlayer = {};
   state.history = [];
   addHistoryEntry(`New game session created. Code: ${state.sessionCode}`);
-  console.log(`Teacher access code updated: ${state.teacherAccessCode}`);
 }
 
 function startGameSession() {
@@ -670,7 +668,29 @@ function startGameSession() {
 }
 
 function claimTeacher(socket, payload) {
-  const accessCode = validateTeacherAccessCode(payload?.accessCode);
+  const accessCodeRaw = String(payload?.accessCode || "").trim();
+  const newAccessCodeRaw = String(payload?.newAccessCode || "").trim();
+
+  if (!state.teacherAccessCode) {
+    if (state.teacherId && state.teacherId !== socket.id) {
+      throw new Error("Teacher controls are already claimed on another device.");
+    }
+
+    let chosenCode = null;
+    if (/^\d{6}$/.test(newAccessCodeRaw)) {
+      chosenCode = newAccessCodeRaw;
+    } else if (/^\d{6}$/.test(accessCodeRaw)) {
+      chosenCode = accessCodeRaw;
+    } else {
+      chosenCode = createSessionCode();
+    }
+
+    state.teacherAccessCode = chosenCode;
+    state.teacherId = socket.id;
+    return { bootstrap: true, teacherAccessCode: chosenCode };
+  }
+
+  const accessCode = validateTeacherAccessCode(accessCodeRaw);
   if (accessCode !== state.teacherAccessCode) {
     throw new Error("Teacher access code is incorrect.");
   }
@@ -678,6 +698,7 @@ function claimTeacher(socket, payload) {
     throw new Error("Teacher controls are already claimed on another device.");
   }
   state.teacherId = socket.id;
+  return { bootstrap: false, teacherAccessCode: state.teacherAccessCode };
 }
 
 function kickPlayerById(playerId) {
@@ -713,8 +734,8 @@ io.on("connection", (socket) => {
 
   socket.on("teacher:claim", (payload, callback) => {
     try {
-      claimTeacher(socket, payload);
-      callback?.({ ok: true });
+      const claimInfo = claimTeacher(socket, payload);
+      callback?.({ ok: true, ...claimInfo });
       addHistoryEntry("Teacher controls claimed.");
       broadcastState();
     } catch (error) {
@@ -896,5 +917,9 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 server.listen(PORT, () => {
   console.log(`Craypots classroom server running on http://localhost:${PORT}`);
-  console.log(`Teacher access code: ${state.teacherAccessCode}`);
+  if (state.teacherAccessCode) {
+    console.log(`Teacher access code: ${state.teacherAccessCode}`);
+  } else {
+    console.log("Teacher access code will be set by first teacher claim.");
+  }
 });

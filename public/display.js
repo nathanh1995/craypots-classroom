@@ -200,14 +200,21 @@ socket.on("state:update", (snapshot) => {
 
 elements.displayClaimTeacherButton.addEventListener("click", async () => {
   const accessCode = elements.displayTeacherCode.value.trim();
-  const response = await emitWithAck("teacher:claim", { accessCode });
+  const response = await emitWithAck("teacher:claim", { accessCode, newAccessCode: accessCode });
   if (!response.ok) {
     setTeacherStatus(response.error, true);
     return;
   }
-  localStorage.setItem(DISPLAY_TEACHER_CODE_KEY, accessCode);
+  if (response.teacherAccessCode) {
+    elements.displayTeacherCode.value = response.teacherAccessCode;
+    localStorage.setItem(DISPLAY_TEACHER_CODE_KEY, response.teacherAccessCode);
+  }
   viewState.teacher = true;
-  setTeacherStatus("Teacher controls active on this screen.");
+  if (response.bootstrap) {
+    setTeacherStatus(`Teacher controls active. Code: ${response.teacherAccessCode}`);
+  } else {
+    setTeacherStatus("Teacher controls active on this screen.");
+  }
   renderTable(viewState.lastSnapshotPlayers);
 });
 

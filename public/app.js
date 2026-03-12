@@ -443,16 +443,23 @@ elements.clearSavedButton.addEventListener("click", () => {
 
 elements.claimTeacherButton.addEventListener("click", async () => {
   const accessCode = elements.teacherAccessCode.value.trim();
-  const response = await emitWithAck("teacher:claim", { accessCode });
+  const response = await emitWithAck("teacher:claim", { accessCode, newAccessCode: accessCode });
 
   if (!response.ok) {
     setStatus(response.error, true);
     return;
   }
 
-  localStorage.setItem(STORAGE_TEACHER_CODE_KEY, accessCode);
+  if (response.teacherAccessCode) {
+    elements.teacherAccessCode.value = response.teacherAccessCode;
+    localStorage.setItem(STORAGE_TEACHER_CODE_KEY, response.teacherAccessCode);
+  }
   viewState.teacher = true;
-  setStatus("Teacher controls are active on this device.");
+  if (response.bootstrap) {
+    setStatus(`Teacher controls active. Your teacher code is ${response.teacherAccessCode}.`);
+  } else {
+    setStatus("Teacher controls are active on this device.");
+  }
   elements.teacherPanel.classList.remove("hidden");
 });
 
