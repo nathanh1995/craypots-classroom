@@ -60,6 +60,7 @@ const elements = {
   sellButton: document.getElementById("sellButton"),
   claimAmountInput: document.getElementById("claimAmountInput"),
   claimSettlementButton: document.getElementById("claimSettlementButton"),
+  claimGuidance: document.getElementById("claimGuidance"),
   leaderboardBody: document.getElementById("leaderboardBody"),
   historyList: document.getElementById("historyList")
 };
@@ -144,6 +145,34 @@ function updateCountdownUI() {
   } else {
     elements.playerCountdownAlert.textContent = "";
   }
+}
+
+function updateClaimGuidance(snapshot, me) {
+  if (!me) {
+    elements.claimGuidance.textContent = "";
+    return;
+  }
+
+  if (snapshot.phase !== "resolved") {
+    elements.claimGuidance.textContent = "Cash claim unlocks only after the teacher clicks Resolve round.";
+    return;
+  }
+
+  if (!me.needsSettlement) {
+    elements.claimGuidance.textContent = "You already claimed this round's cash.";
+    return;
+  }
+
+  const inside = me.lastPlacement.inside;
+  const outside = me.lastPlacement.outside;
+  if (snapshot.weather === "good") {
+    elements.claimGuidance.textContent =
+      `Good weather. You placed ${inside} inside and ${outside} outside. Calculate ${inside}x$2 + ${outside}x$8.`;
+    return;
+  }
+
+  elements.claimGuidance.textContent =
+    `Bad weather. You placed ${inside} inside and ${outside} outside. Calculate ${inside}x$4. Outside pots are lost.`;
 }
 
 function getDiceFace(roll) {
@@ -399,6 +428,9 @@ function render(snapshot) {
     elements.phaseBadge.textContent = getPhaseText(snapshot, me);
     elements.nextActionText.textContent = getNextActionText(snapshot, me);
     renderStats(me);
+    updateClaimGuidance(snapshot, me);
+  } else {
+    elements.claimGuidance.textContent = "";
   }
 
   updateCountdownUI();
@@ -488,6 +520,10 @@ elements.rollWeatherButton.addEventListener("click", async () => {
   const response = await emitWithAck("teacher:rollWeather", {});
   if (!response.ok) {
     setStatus(response.error, true);
+    return;
+  }
+  if (response.lastRoll === 4) {
+    setStatus(`Universal dice rolled 4. That means same as yesterday, so weather stays ${response.weather}.`);
     return;
   }
   setStatus(`Universal dice rolled ${response.lastRoll}.`);
