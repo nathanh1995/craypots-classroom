@@ -19,6 +19,7 @@ const elements = {
   claimTeacherButton: document.getElementById("claimTeacherButton"),
   teacherAccessCode: document.getElementById("teacherAccessCode"),
   sessionCode: document.getElementById("sessionCode"),
+  hostGameButton: document.getElementById("hostGameButton"),
   joinButton: document.getElementById("joinButton"),
   clearSavedButton: document.getElementById("clearSavedButton"),
   playerName: document.getElementById("playerName"),
@@ -102,6 +103,27 @@ function clearSavedLogin() {
   localStorage.removeItem(STORAGE_TOKEN_KEY);
   localStorage.removeItem(STORAGE_SESSION_CODE_KEY);
   localStorage.removeItem(STORAGE_EMOJI_KEY);
+}
+
+function getSessionCodeInput() {
+  return elements.sessionCode.value.trim().toUpperCase();
+}
+
+function saveTeacherCode(code) {
+  if (!code) {
+    return;
+  }
+  elements.teacherAccessCode.value = code;
+  localStorage.setItem(STORAGE_TEACHER_CODE_KEY, code);
+}
+
+function rememberHostSetup(name, sessionCode) {
+  if (name) {
+    localStorage.setItem(STORAGE_NAME_KEY, name);
+  }
+  if (sessionCode) {
+    localStorage.setItem(STORAGE_SESSION_CODE_KEY, sessionCode);
+  }
 }
 
 function getAutoLockSeconds(snapshot) {
@@ -420,6 +442,7 @@ function render(snapshot) {
   elements.resolveRoundButton.disabled =
     !viewState.teacher || !snapshot.gameStarted || snapshot.phase !== "planning" || !snapshot.choicesLocked;
   elements.startRoundButton.disabled = !viewState.teacher || !snapshot.gameStarted || snapshot.phase !== "resolved";
+  elements.hostGameButton.disabled = viewState.teacher && snapshot.gameStarted;
   elements.createGameButton.disabled = !viewState.teacher;
   elements.startGameButton.disabled = !viewState.teacher || !snapshot.sessionCode || snapshot.gameStarted;
 
@@ -438,11 +461,102 @@ function render(snapshot) {
   renderHistory(snapshot.history);
 }
 
+async function claimTeacherControls({ silent = false } = {}) {
+  const accessCode = elements.teacherAccessCode.value.trim();
+  const response = await emitWithAck("teacher:claim", { accessCode, newAccessCode: accessCode });
+
+  if (!response.ok) {
+    if (!silent) {
+      setStatus(response.error, true);
+    }
+    return response;
+  }
+
+  saveTeacherCode(response.teacherAccessCode);
+  viewState.teacher = true;
+  elements.teacherPanel.classList.remove("hidden");
+
+  if (!silent) {
+    if (response.bootstrap) {
+      setStatus(`Teacher controls active. Your teacher code is ${response.teacherAccessCode}.`);
+    } else {
+      setStatus("Teacher controls are active on this device.");
+    }
+  }
+
+  return response;
+}
+
+async function createGameSession({ silent = false } = {}) {
+  const sessionCode = getSessionCodeInput();
+  const teacherName = elements.playerName.value.trim();
+  const response = await emitWithAck("teacher:createGame", { sessionCode, teacherName });
+
+  if (!response.ok) {
+    if (!silent) {
+      setStatus(response.error, true);
+    }
+    return response;
+  }
+
+  elements.sessionCode.value = response.sessionCode;
+  if (response.teacherName) {
+    elements.playerName.value = response.teacherName;
+  }
+  saveTeacherCode(response.teacherAccessCode);
+  rememberHostSetup(response.teacherName || teacherName, response.sessionCode);
+
+  if (!silent) {
+    setStatus(`Session created. Session code: ${response.sessionCode}. Teacher code: ${response.teacherAccessCode}`);
+  }
+
+  return response;
+}
+
+async function hostGame() {
+  const teacherName = elements.playerName.value.trim();
+  const sessionCode = getSessionCodeInput();
+
+  if (!teacherName) {
+    setStatus("Enter your name before starting the game.", true);
+    return;
+  }
+
+  if (!sessionCode) {
+    setStatus("Enter the code you want to share before starting the game.", true);
+    return;
+  }
+
+  elements.sessionCode.value = sessionCode;
+
+  const claimResponse = await claimTeacherControls({ silent: true });
+  if (!claimResponse.ok) {
+    setStatus(claimResponse.error, true);
+    return;
+  }
+
+  const createResponse = await createGameSession({ silent: true });
+  if (!createResponse.ok) {
+    setStatus(createResponse.error, true);
+    return;
+  }
+
+  const startResponse = await emitWithAck("teacher:startGame", {});
+  if (!startResponse.ok) {
+    setStatus(startResponse.error, true);
+    return;
+  }
+
+  const hostLabel = createResponse.teacherName || teacherName;
+  setStatus(`${hostLabel}, your game is live. Share code ${createResponse.sessionCode} so your kids can join.`);
+}
+
 async function joinOrReconnect() {
   const name = elements.playerName.value.trim();
   const pin = elements.playerPin.value.trim();
-  const sessionCode = elements.sessionCode.value.trim();
+  const sessionCode = getSessionCodeInput();
   const emoji = elements.playerEmoji.value.trim();
+  elements.sessionCode.value = sessionCode;
   const response = await emitWithAck("player:join", {
     name,
     pin,
@@ -462,6 +576,10 @@ async function joinOrReconnect() {
   setStatus(response.reconnected ? "Reconnected to your saved player." : "You joined the live class game.");
 }
 
+elements.hostGameButton.addEventListener("click", async () => {
+  await hostGame();
+});
+
 elements.joinButton.addEventListener("click", async () => {
   await joinOrReconnect();
 });
@@ -474,37 +592,11 @@ elements.clearSavedButton.addEventListener("click", () => {
 });
 
 elements.claimTeacherButton.addEventListener("click", async () => {
-  const accessCode = elements.teacherAccessCode.value.trim();
-  const response = await emitWithAck("teacher:claim", { accessCode, newAccessCode: accessCode });
-
-  if (!response.ok) {
-    setStatus(response.error, true);
-    return;
-  }
-
-  if (response.teacherAccessCode) {
-    elements.teacherAccessCode.value = response.teacherAccessCode;
-    localStorage.setItem(STORAGE_TEACHER_CODE_KEY, response.teacherAccessCode);
-  }
-  viewState.teacher = true;
-  if (response.bootstrap) {
-    setStatus(`Teacher controls active. Your teacher code is ${response.teacherAccessCode}.`);
-  } else {
-    setStatus("Teacher controls are active on this device.");
-  }
-  elements.teacherPanel.classList.remove("hidden");
+  await claimTeacherControls();
 });
 
 elements.createGameButton.addEventListener("click", async () => {
-  const response = await emitWithAck("teacher:createGame", {});
-  if (!response.ok) {
-    setStatus(response.error, true);
-    return;
-  }
-  elements.sessionCode.value = response.sessionCode;
-  elements.teacherAccessCode.value = response.teacherAccessCode;
-  localStorage.setItem(STORAGE_TEACHER_CODE_KEY, response.teacherAccessCode);
-  setStatus(`Session created. Session code: ${response.sessionCode}. Teacher code: ${response.teacherAccessCode}`);
+  await createGameSession();
 });
 
 elements.startGameButton.addEventListener("click", async () => {
@@ -513,7 +605,8 @@ elements.startGameButton.addEventListener("click", async () => {
     setStatus(response.error, true);
     return;
   }
-  setStatus("Game started. Students can now play rounds.");
+  const sessionCode = getSessionCodeInput() || viewState.snapshot?.sessionCode || "your session";
+  setStatus(`Game started. Share code ${sessionCode} so students can now play rounds.`);
 });
 
 elements.rollWeatherButton.addEventListener("click", async () => {

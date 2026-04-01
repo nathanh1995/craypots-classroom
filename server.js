@@ -15,7 +15,9 @@ const STARTING_POTS = 5;
 const BOAT_COST = 100;
 const BOAT_SELL_VALUE = 50;
 const POT_COST = 5;
-const SESSION_CODE_LENGTH = 6;
+const DEFAULT_SESSION_CODE_LENGTH = 6;
+const SESSION_CODE_MIN_LENGTH = 4;
+const SESSION_CODE_MAX_LENGTH = 8;
 const AUTO_LOCK_SECONDS = 60;
 const TEACHER_CODE_LENGTH = 6;
 
@@ -27,6 +29,7 @@ const weatherLabels = {
 const state = {
   sessionCode: null,
   teacherAccessCode: null,
+  teacherName: null,
   gameStarted: false,
   round: 1,
   phase: "planning",
@@ -47,8 +50,8 @@ function createId() {
 }
 
 function createSessionCode() {
-  const min = 10 ** (SESSION_CODE_LENGTH - 1);
-  const max = 10 ** SESSION_CODE_LENGTH - 1;
+  const min = 10 ** (DEFAULT_SESSION_CODE_LENGTH - 1);
+  const max = 10 ** DEFAULT_SESSION_CODE_LENGTH - 1;
   return String(Math.floor(Math.random() * (max - min + 1)) + min);
 }
 
@@ -111,6 +114,7 @@ function snapshot() {
 
   return {
     sessionCode: state.sessionCode,
+    teacherName: state.teacherName,
     gameStarted: state.gameStarted,
     teacherClaimed: Boolean(state.teacherId),
     round: state.round,
@@ -178,7 +182,7 @@ function ensurePlanningOpen(player) {
 function validateName(name) {
   const normalized = String(name || "").trim().slice(0, 24);
   if (!normalized) {
-    throw new Error("Enter a player name.");
+    throw new Error("Enter a name.");
   }
   return normalized;
 }
@@ -195,8 +199,10 @@ function validateSessionCode(code) {
   const normalized = String(code || "")
     .trim()
     .toUpperCase();
-  if (!/^\d{6}$/.test(normalized)) {
-    throw new Error("Session code must be exactly 6 digits.");
+  if (!new RegExp(`^[A-Z0-9]{${SESSION_CODE_MIN_LENGTH},${SESSION_CODE_MAX_LENGTH}}$`).test(normalized)) {
+    throw new Error(
+      `Session code must be ${SESSION_CODE_MIN_LENGTH}-${SESSION_CODE_MAX_LENGTH} letters or numbers.`
+    );
   }
   return normalized;
 }
@@ -639,9 +645,13 @@ function resetGame() {
   addHistoryEntry("Game reset to starting values.");
 }
 
-function createGameSession() {
+function createGameSession(options = {}) {
   clearAutoLockTimer();
-  state.sessionCode = createSessionCode();
+  const requestedSessionCode = String(options?.sessionCode || "").trim();
+  const requestedTeacherName = String(options?.teacherName || "").trim();
+
+  state.sessionCode = requestedSessionCode ? validateSessionCode(requestedSessionCode) : createSessionCode();
+  state.teacherName = requestedTeacherName ? validateName(requestedTeacherName) : state.teacherName;
   state.gameStarted = false;
   state.round = 1;
   state.phase = "planning";
@@ -653,7 +663,11 @@ function createGameSession() {
   state.players = {};
   state.socketToPlayer = {};
   state.history = [];
-  addHistoryEntry(`New game session created. Code: ${state.sessionCode}`);
+  addHistoryEntry(
+    state.teacherName
+      ? `${state.teacherName} created a new game session. Code: ${state.sessionCode}`
+      : `New game session created. Code: ${state.sessionCode}`
+  );
 }
 
 function startGameSession() {
@@ -664,7 +678,11 @@ function startGameSession() {
     throw new Error("Game is already started.");
   }
   state.gameStarted = true;
-  addHistoryEntry(`Game started for session ${state.sessionCode}.`);
+  addHistoryEntry(
+    state.teacherName
+      ? `${state.teacherName} started the game for session ${state.sessionCode}.`
+      : `Game started for session ${state.sessionCode}.`
+  );
 }
 
 function claimTeacher(socket, payload) {
@@ -743,14 +761,15 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("teacher:createGame", (_, callback) => {
+  socket.on("teacher:createGame", (payload, callback) => {
     try {
       ensureTeacher(socket.id);
-      createGameSession();
+      createGameSession(payload);
       callback?.({
         ok: true,
         sessionCode: state.sessionCode,
-        teacherAccessCode: state.teacherAccessCode
+        teacherAccessCode: state.teacherAccessCode,
+        teacherName: state.teacherName
       });
       broadcastState();
     } catch (error) {

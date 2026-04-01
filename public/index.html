@@ -58,25 +58,29 @@
 
         <section class="panel join-panel">
           <div class="panel-heading">
-            <h2>Join The Session</h2>
+            <h2>Start Or Join A Session</h2>
             <div class="teacher-claim-wrap">
               <input
                 id="teacherAccessCode"
                 maxlength="6"
                 inputmode="numeric"
-                placeholder="Teacher code (blank first time)"
+                placeholder="Teacher code to reclaim controls"
               />
               <button id="claimTeacherButton" class="secondary-button">Claim teacher controls</button>
             </div>
           </div>
+          <p class="hint join-intro">
+            Teacher or host: enter your name and the code you want to use, then press Start game. Students can
+            use that same code to join.
+          </p>
           <div class="join-form">
             <div class="join-grid">
               <div>
                 <label for="sessionCode">Session code</label>
-                <input id="sessionCode" maxlength="6" inputmode="numeric" placeholder="6-digit code" />
+                <input id="sessionCode" maxlength="8" placeholder="Your game code" autocapitalize="characters" spellcheck="false" />
               </div>
               <div>
-                <label for="playerName">Student name</label>
+                <label for="playerName">Your name</label>
                 <input id="playerName" maxlength="24" placeholder="Enter your name" />
               </div>
               <div>
@@ -97,8 +101,12 @@
                 </select>
               </div>
             </div>
+            <div class="host-start-wrap">
+              <button id="hostGameButton" class="primary-button">Start game</button>
+              <p class="hint">Creates the session, turns on teacher controls here, and shares your chosen code.</p>
+            </div>
             <div class="join-row">
-              <button id="joinButton" class="primary-button">Join or reconnect</button>
+              <button id="joinButton" class="secondary-button">Join or reconnect</button>
               <button id="clearSavedButton" class="secondary-button">Forget saved login</button>
             </div>
           </div>

@@ -238,11 +238,30 @@ h1 {
   flex-direction: column;
 }
 
+.join-intro {
+  margin-bottom: 16px;
+}
+
 .join-grid {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
+}
+
+.host-start-wrap {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(0, 119, 182, 0.08);
+  border: 1px solid rgba(47, 102, 144, 0.12);
+}
+
+.host-start-wrap .hint {
+  margin: 0;
 }
 
 input,
@@ -619,6 +638,11 @@ tbody tr:first-child td {
   }
 
   .join-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .host-start-wrap {
     flex-direction: column;
     align-items: stretch;
   }

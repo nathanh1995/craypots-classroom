@@ -5,6 +5,7 @@ Small shared-session classroom game based on the worksheet version of Craypots.
 ## What it does
 
 - One live session for the whole class
+- Teacher/host can choose their own session code and start the game from the main screen
 - Students join/reconnect with name + 4-digit PIN
 - Teacher rolls one universal game dice for weather, locks choices, resolves rounds, starts next rounds, and resets the game
 - Live leaderboard ranks players by money
@@ -36,6 +37,13 @@ Small shared-session classroom game based on the worksheet version of Craypots.
 2. Start the server with `npm start`
 3. On the teacher device, open `http://localhost:3000`
 4. On student devices on the same network, open `http://MSFC3497648346:3000`
+
+Teacher quick start:
+
+1. Enter your name
+2. Enter the session code you want to use
+3. Click `Start game`
+4. Share that session code with students so they can join
 
 If Windows complains about running npm from a network share, use:
 
